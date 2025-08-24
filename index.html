@@ -12,8 +12,14 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <link rel="stylesheet" href="./style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.slim.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen">
+    <!-- Back to top button -->
+    <a id="backtotop"></a>
+
     <div class="container mx-auto px-4 py-8">
         <!-- Header -->
         <header class="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-xl shadow-lg mb-8 p-6">
@@ -22,7 +28,11 @@
                     <i class="fas fa-exchange-alt text-3xl mr-3"></i>
                     <h1 class="text-2xl md:text-3xl font-bold">Hệ Thống Đổi Phiếu Nhận Quà</h1>
                 </div>
-                <div class="flex items-center">
+                <div class="flex items-center space-x-4">
+                    <button onclick="showDailyReport()" class="bg-white text-blue-600 rounded-lg px-4 py-2 font-bold flex items-center hover:bg-gray-50 transition-all duration-300">
+                        <i class="fas fa-chart-bar mr-2"></i>
+                        Báo cáo
+                    </button>
                     <div class="bg-white text-blue-600 rounded-full px-4 py-2 font-bold flex items-center">
                         <i class="fas fa-coins mr-2"></i>
                     </div>
@@ -163,6 +173,69 @@
                             </button>
                         </div>
                     </div>
+                </div>
+            </section>
+
+            <!-- Daily Report Section (Initially Hidden) -->
+            <section id="dailyReportSection" class="bg-white rounded-xl shadow-lg p-6 hidden">
+                <div class="text-center mb-6">
+                    <i class="fas fa-chart-bar text-5xl text-blue-500 mb-4"></i>
+                    <h2 class="text-2xl font-bold text-gray-800">Báo Cáo Hàng Ngày</h2>
+                    <p class="text-gray-600">Thống kê sản phẩm đã đổi trong ngày</p>
+                </div>
+                
+                <div class="mb-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <h3 class="text-lg font-medium text-gray-700">Ngày: <span id="reportDate"></span></h3>
+                        <button onclick="hideDailyReport()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-2 px-4 rounded-lg transition-all duration-300">
+                            <i class="fas fa-times mr-2"></i> Đóng
+                        </button>
+                    </div>
+                    
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 mb-6">
+                        <div class="bg-blue-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-blue-600" id="totalExchanges">0</div>
+                            <div class="text-sm text-gray-600">Tổng giao dịch</div>
+                        </div>
+                        <div class="bg-green-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-green-600" id="totalPoints">0</div>
+                            <div class="text-sm text-gray-600">Tổng phiếu</div>
+                        </div>
+                        <div class="bg-purple-50 rounded-lg p-4 text-center">
+                            <div class="text-2xl font-bold text-purple-600" id="totalItems">0</div>
+                            <div class="text-sm text-gray-600">Tổng sản phẩm</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-6">
+                    <h3 class="text-lg font-medium text-gray-700 mb-4">Chi tiết sản phẩm</h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full bg-gray-50 rounded-lg">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th class="px-4 py-3 text-left text-gray-700 font-medium">Sản phẩm</th>
+                                    <th class="px-4 py-3 text-center text-gray-700 font-medium">Số lượng</th>
+                                    <th class="px-4 py-3 text-center text-gray-700 font-medium">Phiếu</th>
+                                </tr>
+                            </thead>
+                            <tbody id="reportTableBody">
+                                <!-- Report data will be populated here -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <div class="text-center space-x-4">
+                    <button onclick="exportReportExcel()" class="excel-export-btn text-white font-bold py-2 px-6 rounded-lg">
+                        <i class="fas fa-file-excel mr-2"></i> Xuất Excel
+                    </button>
+                    <button onclick="exportReport()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300">
+                        <i class="fas fa-download mr-2"></i> Xuất JSON
+                    </button>
+                    <button onclick="clearDailyReport()" class="bg-red-600 hover:bg-red-700 text-white font-bold py-2 px-6 rounded-lg transition-all duration-300">
+                        <i class="fas fa-trash mr-2"></i> Xóa dữ liệu
+                    </button>
                 </div>
             </section>
 

@@ -1,3 +1,46 @@
+/* Back to top button */
+#backtotop {
+    display: inline-block;
+    background-color: #cc1902;
+    width: 50px;
+    height: 50px;
+    text-align: center;
+    border-radius: 50%;
+    position: fixed;
+    bottom: 30px;
+    right: 30px;
+    transition: background-color .3s,
+        opacity .5s, visibility .5s;
+    opacity: 0;
+    visibility: hidden;
+    z-index: 1000;
+}
+
+#backtotop::after {
+    content: "\f077";
+    font-family: FontAwesome;
+    font-weight: normal;
+    font-style: normal;
+    font-size: 2em;
+    line-height: 50px;
+    color: #fff;
+}
+
+#backtotop:hover {
+    cursor: pointer;
+    background-color: #333;
+}
+
+#backtotop:active {
+    background-color: #555;
+}
+
+#backtotop.show {
+    opacity: 1;
+    visibility: visible;
+}
+
+
 .product-card:hover {
     transform: translateY(-5px);
     box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
@@ -163,4 +206,77 @@ body {
     color: #27ae60;
     font-size: 50px;
     margin-bottom: 15px;
+}
+
+/* Daily Report Styles */
+.daily-report-card {
+    transition: all 0.3s ease;
+}
+
+.daily-report-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.report-table {
+    border-collapse: collapse;
+    width: 100%;
+}
+
+.report-table th,
+.report-table td {
+    border-bottom: 1px solid #e5e7eb;
+    padding: 12px;
+    text-align: left;
+}
+
+.report-table th {
+    background-color: #f9fafb;
+    font-weight: 600;
+    color: #374151;
+}
+
+.report-table tr:hover {
+    background-color: #f9fafb;
+}
+
+.report-summary-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    padding: 20px;
+    text-align: center;
+    transition: all 0.3s ease;
+}
+
+.report-summary-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+}
+
+/* Excel Export Button Animation */
+.excel-export-btn {
+    background: linear-gradient(135deg, #217346 0%, #1e6b3d 100%);
+    transition: all 0.3s ease;
+}
+
+.excel-export-btn:hover {
+    background: linear-gradient(135deg, #1e6b3d 0%, #155a2e 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(33, 115, 70, 0.3);
+}
+
+/* Loading spinner for export */
+.export-loading {
+    display: inline-block;
+    width: 16px;
+    height: 16px;
+    border: 2px solid #ffffff;
+    border-radius: 50%;
+    border-top-color: transparent;
+    animation: spin 1s ease-in-out infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
 }
