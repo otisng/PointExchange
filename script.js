@@ -23,7 +23,9 @@ const products = {
     card: { name: "Card", points: 100 },
     phinhxanh: { name: "Phỉnh Xanh", points: 50 },
     phinhdo: { name: "Phỉnh Đỏ", points: 50 },
-    coin: { name: "80 Xu", points: 1 }
+    coin: { name: "80 Phiếu", points: 1 },
+    gift2: { name: "Quà hạng 2", points: 800 },
+    gift3: { name: "Quà hạng 3", points: 400 }
 };
 
 // Daily report data structure

@@ -76,9 +76,9 @@
                     <div class="product-card bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300">
                         <div class="p-4">
                             <div class="flex justify-between items-start mb-3">
-                                <h3 class="text-lg font-semibold text-gray-800">Phỉnh Đỏ</h3>
+                                <h3 class="text-lg font-semibold text-gray-800">Phỉnh xanh</h3>
                             </div>
-                            <img src="img/red_card.jpg" alt="Phỉnh Đỏ" class="w-full h-40 object-contain mb-3">
+                            <img src="img/blue_card.jpg" alt="Phỉnh đỏ" class="w-full h-40 object-contain mb-3">
                             <div class="flex justify-between items-center">
                                 <div class="text-gray-600">
                                     <span class="font-bold text-blue-600">50</span> phiếu
@@ -100,9 +100,9 @@
                     <div class="product-card bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300">
                         <div class="p-4">
                             <div class="flex justify-between items-start mb-3">
-                                <h3 class="text-lg font-semibold text-gray-800">Phỉnh Xanh</h3>
+                                <h3 class="text-lg font-semibold text-gray-800">Phỉnh đỏ</h3>
                             </div>
-                            <img src="img/blue_card.jpg" alt="Phỉnh Xanh" class="w-full h-40 object-contain mb-3">
+                            <img src="img/red_card.jpg" alt="Phỉnh đỏ" class="w-full h-40 object-contain mb-3">
                             <div class="flex justify-between items-center">
                                 <div class="text-gray-600">
                                     <span class="font-bold text-blue-600">50</span> phiếu
@@ -124,12 +124,12 @@
                     <div class="product-card bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300">
                         <div class="p-4">
                             <div class="flex justify-between items-start mb-3">
-                                <h3 class="text-lg font-semibold text-gray-800">80 Xu</h3>
+                                <h3 class="text-lg font-semibold text-gray-800">80 Phiếu</h3>
                             </div>
                             <img src="img/coins.jpg" alt="Coins" class="w-full h-40 object-contain mb-3">
                             <div class="flex justify-between items-center">
                                 <div class="text-gray-600">
-                                    <span class="font-bold text-blue-600">1</span> Phiếu
+                                    <span class="font-bold text-blue-600">1</span> Xu
                                 </div>
                                 <div class="flex items-center">
                                     <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded-l" onclick="adjustQuantity('coin', -1)">
@@ -137,6 +137,54 @@
                                     </button>
                                     <input type="text" id="coin-qty" value="0" min="0" class="w-12 text-center border-t border-b border-gray-300 py-1">
                                     <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded-r" onclick="adjustQuantity('coin', 1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product 5 -->
+                    <div class="product-card bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300">
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="text-lg font-semibold text-gray-800">Quà hạng 2</h3>
+                            </div>
+                            <img src="img/gift.png" alt="gift2" class="w-full h-40 object-contain mb-3">
+                            <div class="flex justify-between items-center">
+                                <div class="text-gray-600">
+                                    <span class="font-bold text-blue-600">800</span> Phiếu
+                                </div>
+                                <div class="flex items-center">
+                                    <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded-l" onclick="adjustQuantity('gift2', -1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="text" id="gift2-qty" value="0" min="0" class="w-12 text-center border-t border-b border-gray-300 py-1">
+                                    <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded-r" onclick="adjustQuantity('gift2', 1)">
+                                        <i class="fas fa-plus"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Product 6 -->
+                    <div class="product-card bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300">
+                        <div class="p-4">
+                            <div class="flex justify-between items-start mb-3">
+                                <h3 class="text-lg font-semibold text-gray-800">Quà hạng 3</h3>
+                            </div>
+                            <img src="img/gift.png" alt="gift3" class="w-full h-40 object-contain mb-3">
+                            <div class="flex justify-between items-center">
+                                <div class="text-gray-600">
+                                    <span class="font-bold text-blue-600">400</span> Phiếu
+                                </div>
+                                <div class="flex items-center">
+                                    <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded-l" onclick="adjustQuantity('gift3', -1)">
+                                        <i class="fas fa-minus"></i>
+                                    </button>
+                                    <input type="text" id="gift3-qty" value="0" min="0" class="w-12 text-center border-t border-b border-gray-300 py-1">
+                                    <button class="quantity-btn bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-1 px-2 rounded-r" onclick="adjustQuantity('gift3', 1)">
                                         <i class="fas fa-plus"></i>
                                     </button>
                                 </div>
