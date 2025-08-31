@@ -1,3 +1,75 @@
+// Authentication functions
+function checkAuthentication() {
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+        // No user logged in, redirect to login page
+        window.location.href = 'login.html';
+        return null;
+    }
+    
+    try {
+        const user = JSON.parse(currentUser);
+        return user;
+    } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login.html';
+        return null;
+    }
+}
+
+function displayUserInfo() {
+    const user = checkAuthentication();
+    if (user) {
+        const userInfoElement = document.getElementById('userInfo');
+        if (userInfoElement) {
+            userInfoElement.textContent = `${user.name} (${user.role})`;
+        }
+        
+        // Show/hide report button based on role
+        const reportButton = document.querySelector('button[onclick="showDailyReport()"]');
+        if (reportButton) {
+            if (user.role === 'admin') {
+                reportButton.style.display = 'flex';
+            } else {
+                reportButton.style.display = 'none';
+            }
+        }
+        
+        // Show welcome message
+        showWelcomeMessage(user);
+    }
+}
+
+function showWelcomeMessage(user) {
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    const welcomeText = document.getElementById('welcomeText');
+    
+    if (welcomeMessage && welcomeText) {
+        welcomeText.textContent = `Chào mừng ${user.name}! Bạn đã đăng nhập với quyền ${user.role === 'admin' ? 'quản trị viên' : 'người dùng'}.`;
+        welcomeMessage.classList.remove('hidden');
+        
+        // Auto hide after 5 seconds
+        setTimeout(() => {
+            hideWelcomeMessage();
+        }, 5000);
+    }
+}
+
+function hideWelcomeMessage() {
+    const welcomeMessage = document.getElementById('welcomeMessage');
+    if (welcomeMessage) {
+        welcomeMessage.classList.add('hidden');
+    }
+}
+
+function logout() {
+    if (confirm('Bạn có chắc chắn muốn đăng xuất?')) {
+        localStorage.removeItem('currentUser');
+        window.location.href = 'login.html';
+    }
+}
+
 // Back to top button
 var btn = $('#backtotop');
 
@@ -28,43 +100,26 @@ const products = {
     gift3: { name: "Quà hạng 3", points: 400 }
 };
 
-// Daily report data structure
-let dailyReport = {
-    date: getCurrentDate(),
-    exchanges: [],
-    totals: {
-        totalExchanges: 0,
-        totalPoints: 0,
-        totalItems: 0,
-        products: {}
-    }
-};
+// Global transaction storage
+let allTransactions = [];
+let currentReportDate = getCurrentDate();
 
-// Initialize daily report from localStorage
-function initializeDailyReport() {
-    const savedReport = localStorage.getItem('dailyReport');
-    if (savedReport) {
-        const parsed = JSON.parse(savedReport);
-        // Check if it's from today
-        if (parsed.date === getCurrentDate()) {
-            dailyReport = parsed;
-        } else {
-            // Reset for new day
-            dailyReport = {
-                date: getCurrentDate(),
-                exchanges: [],
-                totals: {
-                    totalExchanges: 0,
-                    totalPoints: 0,
-                    totalItems: 0,
-                    products: {}
-                }
-            };
-            saveDailyReport();
+// Initialize transaction storage from localStorage
+function initializeTransactionStorage() {
+    const savedTransactions = localStorage.getItem('allTransactions');
+    if (savedTransactions) {
+        try {
+            allTransactions = JSON.parse(savedTransactions);
+        } catch (error) {
+            console.error('Error parsing saved transactions:', error);
+            allTransactions = [];
         }
-    } else {
-        saveDailyReport();
     }
+}
+
+// Save all transactions to localStorage
+function saveAllTransactions() {
+    localStorage.setItem('allTransactions', JSON.stringify(allTransactions));
 }
 
 // Get current date in YYYY-MM-DD format
@@ -73,35 +128,57 @@ function getCurrentDate() {
     return now.toISOString().split('T')[0];
 }
 
-// Save daily report to localStorage
-function saveDailyReport() {
-    localStorage.setItem('dailyReport', JSON.stringify(dailyReport));
+// Get transactions for a specific date
+function getTransactionsByDate(date) {
+    return allTransactions.filter(transaction => {
+        const transactionDate = transaction.timestamp.split('T')[0];
+        return transactionDate === date;
+    });
 }
 
-// Add exchange to daily report
-function addExchangeToReport(exchangeData) {
-    dailyReport.exchanges.push(exchangeData);
-    dailyReport.totals.totalExchanges++;
-    dailyReport.totals.totalPoints += exchangeData.totalPoints;
+// Calculate totals for a specific date
+function calculateTotalsForDate(date) {
+    const transactions = getTransactionsByDate(date);
+    const totals = {
+        totalExchanges: transactions.length,
+        totalPoints: 0,
+        totalItems: 0,
+        products: {}
+    };
     
-    // Update product totals
-    for (const [productId, quantity] of Object.entries(exchangeData.items)) {
-        if (quantity > 0) {
-            const product = products[productId];
-            if (!dailyReport.totals.products[productId]) {
-                dailyReport.totals.products[productId] = {
-                    name: product.name,
-                    quantity: 0,
-                    points: 0
-                };
+    transactions.forEach(transaction => {
+        totals.totalPoints += transaction.totalPoints;
+        
+        for (const [productId, quantity] of Object.entries(transaction.items)) {
+            if (quantity > 0) {
+                const product = products[productId];
+                if (!totals.products[productId]) {
+                    totals.products[productId] = {
+                        name: product.name,
+                        quantity: 0,
+                        points: 0
+                    };
+                }
+                totals.products[productId].quantity += quantity;
+                totals.products[productId].points += quantity * product.points;
+                totals.totalItems += quantity;
             }
-            dailyReport.totals.products[productId].quantity += quantity;
-            dailyReport.totals.products[productId].points += quantity * product.points;
-            dailyReport.totals.totalItems += quantity;
         }
+    });
+    
+    return totals;
+}
+
+// Add transaction to storage
+function addTransaction(transactionData) {
+    const user = checkAuthentication();
+    if (user) {
+        transactionData.user = user.name;
+        transactionData.userRole = user.role;
     }
     
-    saveDailyReport();
+    allTransactions.push(transactionData);
+    saveAllTransactions();
 }
 
 // User's current points balance
@@ -189,8 +266,8 @@ function processExchange() {
             }
         }
         
-        // Add to daily report
-        addExchangeToReport(exchangeData);
+        // Add to transaction storage
+        addTransaction(exchangeData);
         
         // Update receipt totals
         document.getElementById('receiptTotal').textContent = `${subtotal.toLocaleString()} Phiếu`;
@@ -243,7 +320,7 @@ function processExchange() {
                          <i class="fas fa-receipt"></i> PHIẾU ĐỔI QUÀ
                      </div>
                      
-                     <div class="receipt-items" id="printReceiptItems">
+                     <div class="receipt-items" id="printReceiptItems" style="font-size:10px">
                          ${receiptContent.querySelector('#receiptItems').innerHTML}
                      </div>
                      
@@ -285,10 +362,26 @@ function resetExchange() {
     document.querySelector('section.bg-white.rounded-xl.shadow-lg.p-6.mb-8').classList.remove('hidden');
 }
 
+
 // Initialize event listeners for direct input changes
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize daily report
-    initializeDailyReport();
+    // Check authentication first
+    const user = checkAuthentication();
+    if (!user) {
+        return; // Will redirect to login page
+    }
+    
+    // Display user information
+    displayUserInfo();
+    
+    // Initialize transaction storage
+    initializeTransactionStorage();
+    
+    // Set current date in date input
+    const dateInput = document.getElementById('reportDateInput');
+    if (dateInput) {
+        dateInput.value = getCurrentDate();
+    }
     
     for (const productId of Object.keys(products)) {
         document.getElementById(`${productId}-qty`).addEventListener('input', function() {
@@ -296,10 +389,27 @@ document.addEventListener('DOMContentLoaded', function() {
             updateSummary();
         });
     }
+    
+    // Show notification about data storage
+    if (allTransactions.length > 0) {
+        showNotification(`Đã tải ${allTransactions.length} dữ liệu thành công!`, 'success');
+    }
 });
 
+        
 // Daily Report Functions
 function showDailyReport() {
+    const user = checkAuthentication();
+    if (!user) {
+        return;
+    }
+    
+    // Check if user is admin
+    if (user.role !== 'admin') {
+        showNotification('Chỉ admin mới có quyền truy cập báo cáo!', 'error');
+        return;
+    }
+    
     // Hide other sections
     document.getElementById('receiptSection').classList.add('hidden');
     document.querySelector('section.bg-white.rounded-xl.shadow-lg.p-6.mb-8').classList.add('hidden');
@@ -307,8 +417,8 @@ function showDailyReport() {
     // Show daily report section
     document.getElementById('dailyReportSection').classList.remove('hidden');
     
-    // Update report data
-    updateDailyReportDisplay();
+    // Update report data for current date
+    updateDailyReportDisplay(currentReportDate);
 }
 
 function hideDailyReport() {
@@ -319,8 +429,9 @@ function hideDailyReport() {
     document.querySelector('section.bg-white.rounded-xl.shadow-lg.p-6.mb-8').classList.remove('hidden');
 }
 
-function updateDailyReportDisplay() {
-    const totals = dailyReport.totals;
+function updateDailyReportDisplay(date = currentReportDate) {
+    currentReportDate = date;
+    const totals = calculateTotalsForDate(date);
     
     // Update summary cards
     document.getElementById('totalExchanges').textContent = totals.totalExchanges;
@@ -329,7 +440,7 @@ function updateDailyReportDisplay() {
 
     
     // Update date
-    const reportDate = new Date(dailyReport.date);
+    const reportDate = new Date(date);
     document.getElementById('reportDate').textContent = reportDate.toLocaleDateString('vi-VN', {
         weekday: 'long',
         year: 'numeric',
@@ -337,35 +448,128 @@ function updateDailyReportDisplay() {
         day: 'numeric'
     });
     
+    // Update date input
+    const dateInput = document.getElementById('reportDateInput');
+    if (dateInput) {
+        dateInput.value = date;
+    }
+    
     // Update product table
     const tableBody = document.getElementById('reportTableBody');
     tableBody.innerHTML = '';
     
     if (Object.keys(totals.products).length === 0) {
-        tableBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-gray-500">Không có dữ liệu</td></tr>';
+        tableBody.innerHTML = '<tr><td colspan="3" class="px-4 py-3 text-center text-gray-500">Không có dữ liệu</td></tr>';
+    } else {
+        for (const [productId, productData] of Object.entries(totals.products)) {
+            const row = document.createElement('tr');
+            row.className = 'border-b border-gray-200';
+            row.innerHTML = `
+                <td class="px-4 py-3 text-gray-800 font-medium">${productData.name}</td>
+                <td class="px-4 py-3 text-center text-gray-700">${productData.quantity}</td>
+                <td class="px-4 py-3 text-center text-gray-700">${productData.points.toLocaleString()}</td>
+            `;
+            tableBody.appendChild(row);
+        }
+    }
+    
+    // Update transaction history
+    updateTransactionHistory(date);
+}
+
+function updateTransactionHistory(date) {
+    const transactions = getTransactionsByDate(date);
+    const historyBody = document.getElementById('transactionHistoryBody');
+    historyBody.innerHTML = '';
+    
+    if (transactions.length === 0) {
+        historyBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-gray-500">Không có giao dịch nào</td></tr>';
         return;
     }
     
-    for (const [productId, productData] of Object.entries(totals.products)) {
-        const percentage = totals.totalPoints > 0 ? 
-            Math.round((productData.points / totals.totalPoints) * 100) : 0;
+    // Sort transactions by timestamp (newest first)
+    const sortedTransactions = transactions.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+    
+    // Show only the last 10 transactions
+    const recentTransactions = sortedTransactions.slice(0, 10);
+    
+    recentTransactions.forEach(transaction => {
+        const transactionTime = new Date(transaction.timestamp).toLocaleString('vi-VN');
+        const user = transaction.user || 'N/A';
+        
+        // Create product list
+        const productList = Object.entries(transaction.items)
+            .map(([productId, quantity]) => {
+                const product = products[productId];
+                return `${product.name} (${quantity})`;
+            })
+            .join(', ');
         
         const row = document.createElement('tr');
-        row.className = 'border-b border-gray-200';
+        row.className = 'border-b border-gray-200 hover:bg-gray-50';
         row.innerHTML = `
-            <td class="px-4 py-3 text-gray-800 font-medium">${productData.name}</td>
-            <td class="px-4 py-3 text-center text-gray-700">${productData.quantity}</td>
-            <td class="px-4 py-3 text-center text-gray-700">${productData.points.toLocaleString()}</td>
+            <td class="px-4 py-3 text-gray-700 text-sm">${transactionTime}</td>
+            <td class="px-4 py-3 text-gray-700 font-medium">${user}</td>
+            <td class="px-4 py-3 text-center text-gray-700 font-medium">${transaction.totalPoints.toLocaleString()}</td>
+            <td class="px-4 py-3 text-gray-700 text-sm">${productList}</td>
         `;
-        tableBody.appendChild(row);
+        historyBody.appendChild(row);
+    });
+}
+
+// Date filter functions
+function changeReportDate(direction) {
+    const currentDate = new Date(currentReportDate);
+    
+    if (direction === 'prev') {
+        currentDate.setDate(currentDate.getDate() - 1);
+    } else if (direction === 'next') {
+        currentDate.setDate(currentDate.getDate() + 1);
+    }
+    
+    const newDate = currentDate.toISOString().split('T')[0];
+    updateDailyReportDisplay(newDate);
+}
+
+function selectReportDate() {
+    const dateInput = document.getElementById('reportDateInput');
+    if (dateInput && dateInput.value) {
+        updateDailyReportDisplay(dateInput.value);
+    }
+}
+
+// Get available dates with transactions
+function getAvailableDates() {
+    const dates = new Set();
+    allTransactions.forEach(transaction => {
+        const date = transaction.timestamp.split('T')[0];
+        dates.add(date);
+    });
+    return Array.from(dates).sort().reverse();
+}
+
+// Show date picker with available dates
+function showDatePicker() {
+    const availableDates = getAvailableDates();
+    if (availableDates.length === 0) {
+        showNotification('Không có dữ liệu giao dịch nào!', 'info');
+        return;
+    }
+    
+    const dateInput = document.getElementById('reportDateInput');
+    if (dateInput) {
+        dateInput.focus();
     }
 }
 
 function exportReport() {
+    const transactions = getTransactionsByDate(currentReportDate);
+    const totals = calculateTotalsForDate(currentReportDate);
+    
     const reportData = {
-        date: dailyReport.date,
-        totals: dailyReport.totals,
-        exchanges: dailyReport.exchanges
+        date: currentReportDate,
+        totals: totals,
+        transactions: transactions
     };
     
     const dataStr = JSON.stringify(reportData, null, 2);
@@ -373,7 +577,7 @@ function exportReport() {
     
     const link = document.createElement('a');
     link.href = URL.createObjectURL(dataBlob);
-    link.download = `daily-report-${dailyReport.date}.json`;
+    link.download = `daily-report-${currentReportDate}.json`;
     link.click();
 }
 
@@ -386,6 +590,9 @@ function exportReportExcel() {
     exportBtn.disabled = true;
     
     try {
+        const transactions = getTransactionsByDate(currentReportDate);
+        const totals = calculateTotalsForDate(currentReportDate);
+        
         // Create workbook and worksheet
         const wb = XLSX.utils.book_new();
         
@@ -393,19 +600,17 @@ function exportReportExcel() {
         const summaryData = [
             ['BÁO CÁO HÀNG NGÀY - JAZZY PARADISE'],
             [''],
-            ['Ngày:', dailyReport.date],
-            ['Tổng giao dịch:', dailyReport.totals.totalExchanges],
-            ['Tổng phiếu:', dailyReport.totals.totalPoints],
-            ['Tổng sản phẩm:', dailyReport.totals.totalItems],
+            ['Ngày:', currentReportDate],
+            ['Tổng giao dịch:', totals.totalExchanges],
+            ['Tổng phiếu:', totals.totalPoints],
+            ['Tổng sản phẩm:', totals.totalItems],
             [''],
             ['CHI TIẾT SẢN PHẨM'],
             ['Sản phẩm', 'Số lượng', 'Phiếu']
         ];
         
         // Add product details
-        for (const [productId, productData] of Object.entries(dailyReport.totals.products)) {
-            const percentage = dailyReport.totals.totalPoints > 0 ? 
-                Math.round((productData.points / dailyReport.totals.totalPoints) * 100) : 0;
+        for (const [productId, productData] of Object.entries(totals.products)) {
             summaryData.push([
                 productData.name,
                 productData.quantity,
@@ -427,23 +632,24 @@ function exportReportExcel() {
         XLSX.utils.book_append_sheet(wb, summaryWs, 'Tổng hợp');
         
         // Detailed transactions sheet
-        if (dailyReport.exchanges.length > 0) {
+        if (transactions.length > 0) {
             const detailData = [
                 ['CHI TIẾT GIAO DỊCH'],
                 [''],
-                ['Thời gian', 'Tổng phiếu', 'Sản phẩm', 'Số lượng', 'Phiếu']
+                ['Thời gian', 'Người dùng', 'Tổng phiếu', 'Sản phẩm', 'Số lượng', 'Phiếu']
             ];
             
-            dailyReport.exchanges.forEach((exchange, index) => {
-                const exchangeTime = new Date(exchange.timestamp).toLocaleString('vi-VN');
+            transactions.forEach((transaction, index) => {
+                const exchangeTime = new Date(transaction.timestamp).toLocaleString('vi-VN');
                 
-                Object.entries(exchange.items).forEach(([productId, quantity], itemIndex) => {
+                Object.entries(transaction.items).forEach(([productId, quantity], itemIndex) => {
                     const product = products[productId];
                     const itemPoints = quantity * product.points;
                     
                     detailData.push([
                         itemIndex === 0 ? exchangeTime : '', // Only show time for first item
-                        itemIndex === 0 ? exchange.totalPoints : '', // Only show total for first item
+                        itemIndex === 0 ? (transaction.user || 'N/A') : '', // Only show user for first item
+                        itemIndex === 0 ? transaction.totalPoints : '', // Only show total for first item
                         product.name,
                         quantity,
                         itemPoints
@@ -451,8 +657,8 @@ function exportReportExcel() {
                 });
                 
                 // Add empty row between transactions
-                if (index < dailyReport.exchanges.length - 1) {
-                    detailData.push(['', '', '', '', '']);
+                if (index < transactions.length - 1) {
+                    detailData.push(['', '', '', '', '', '']);
                 }
             });
             
@@ -461,6 +667,7 @@ function exportReportExcel() {
             // Set column widths for detail sheet
             detailWs['!cols'] = [
                 { width: 20 },
+                { width: 15 },
                 { width: 12 },
                 { width: 20 },
                 { width: 12 },
@@ -472,7 +679,7 @@ function exportReportExcel() {
         }
         
         // Generate filename with current date
-        const fileName = `bao-cao-ngay-${dailyReport.date}.xlsx`;
+        const fileName = `bao-cao-ngay-${currentReportDate}.xlsx`;
         
         // Save the file
         XLSX.writeFile(wb, fileName);
@@ -528,20 +735,63 @@ function showNotification(message, type = 'info') {
 }
 
 function clearDailyReport() {
-    if (confirm('Bạn có chắc chắn muốn xóa tất cả dữ liệu báo cáo hôm nay?')) {
-        dailyReport = {
-            date: getCurrentDate(),
-            exchanges: [],
-            totals: {
-                totalExchanges: 0,
-                totalPoints: 0,
-                totalItems: 0,
-                products: {}
-            }
-        };
-        saveDailyReport();
-        updateDailyReportDisplay();
+    if (confirm('Bạn có chắc chắn muốn xóa tất cả dữ liệu giao dịch?')) {
+        allTransactions = [];
+        saveAllTransactions();
+        updateDailyReportDisplay(currentReportDate);
+        showNotification('Đã xóa tất cả dữ liệu giao dịch!', 'success');
     }
+}
+
+// Get statistics for all time
+function getAllTimeStats() {
+    const stats = {
+        totalTransactions: allTransactions.length,
+        totalPoints: 0,
+        totalItems: 0,
+        uniqueUsers: new Set(),
+        products: {}
+    };
+    
+    allTransactions.forEach(transaction => {
+        stats.totalPoints += transaction.totalPoints;
+        if (transaction.user) {
+            stats.uniqueUsers.add(transaction.user);
+        }
+        
+        for (const [productId, quantity] of Object.entries(transaction.items)) {
+            if (quantity > 0) {
+                const product = products[productId];
+                if (!stats.products[productId]) {
+                    stats.products[productId] = {
+                        name: product.name,
+                        quantity: 0,
+                        points: 0
+                    };
+                }
+                stats.products[productId].quantity += quantity;
+                stats.products[productId].points += quantity * product.points;
+                stats.totalItems += quantity;
+            }
+        }
+    });
+    
+    stats.uniqueUsers = stats.uniqueUsers.size;
+    return stats;
+}
+
+// Show all time statistics
+function showAllTimeStats() {
+    const stats = getAllTimeStats();
+    const message = `
+        📊 Thống kê tổng quan:
+        • Tổng giao dịch: ${stats.totalTransactions}
+        • Tổng phiếu: ${stats.totalPoints.toLocaleString()}
+        • Tổng sản phẩm: ${stats.totalItems}
+        • Người dùng: ${stats.uniqueUsers}
+    `;
+    
+    alert(message);
 }
 
 // JavaScript to dynamically display the current date and time
