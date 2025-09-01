@@ -88,22 +88,45 @@
 // Initialize user accounts in localStorage if they don't exist
 function initializeAccounts() {
     const accounts = localStorage.getItem('userAccounts');
+    let defaultAccounts = {
+        'user': {
+            username: 'user',
+            password: '123',
+            role: 'user',
+            name: 'User'
+        },
+        'admin': {
+            username: 'admin',
+            password: 'Abcd@1234',
+            role: 'admin',
+            name: 'Administrator'
+        },
+        'giamsat': {
+            username: 'giamsat',
+            password: '123456',
+            role: 'supervisor',
+            name: 'Giám sát'
+        }
+    };
+    
     if (!accounts) {
-        const defaultAccounts = {
-            'user': {
-                username: 'user',
-                password: '123',
-                role: 'user',
-                name: 'User'
-            },
-            'admin': {
-                username: 'admin',
-                password: '456',
-                role: 'admin',
-                name: 'Administrator'
-            }
-        };
+        // First time: create all accounts
         localStorage.setItem('userAccounts', JSON.stringify(defaultAccounts));
+    } else {
+        // Check if we need to add new accounts
+        const existingAccounts = JSON.parse(accounts);
+        let needsUpdate = false;
+        
+        // Check if giamsat account exists
+        if (!existingAccounts['giamsat']) {
+            existingAccounts['giamsat'] = defaultAccounts['giamsat'];
+            needsUpdate = true;
+        }
+        
+        // Update localStorage if needed
+        if (needsUpdate) {
+            localStorage.setItem('userAccounts', JSON.stringify(existingAccounts));
+        }
     }
 }
 
@@ -119,14 +142,21 @@ function checkLoginStatus() {
 // Authenticate user
 function authenticateUser(username, password) {
     const accounts = JSON.parse(localStorage.getItem('userAccounts') || '{}');
+    console.log('Available accounts:', accounts);
+    console.log('Trying to login with:', username, password);
+    
     const user = accounts[username];
+    console.log('Found user:', user);
     
     if (user && user.password === password) {
+        console.log('Login successful for:', username);
         return {
             success: true,
             user: user
         };
     }
+    
+    console.log('Login failed for:', username);
     return {
         success: false,
         message: 'Tên tài khoản hoặc mật khẩu không đúng!'
@@ -208,10 +238,14 @@ document.addEventListener('DOMContentLoaded', function() {
             if (authResult.user.role === 'admin') {
                 successTitle.textContent = 'Quyền truy cập Quản trị viên';
                 successMessage.textContent = `Chào mừng ${authResult.user.name}! Truy cập thành công trang quản trị.`;
+            } else if (authResult.user.role === 'supervisor') {
+                successTitle.textContent = 'Quyền truy cập Giám sát';
+                successMessage.textContent = `Chào mừng ${authResult.user.name}! Truy cập thành công trang giám sát.`;
             } else {
                 successTitle.textContent = 'Xin chào!';
                 successMessage.textContent = `Chào mừng ${authResult.user.name}! Truy cập hệ thống đổi phiếu Jazzy Paradise.`;
             }
+
             
             // Show success modal
             successModal.classList.remove('hidden');
@@ -233,7 +267,7 @@ document.addEventListener('DOMContentLoaded', function() {
         window.location.href = 'index.html';
     });
 });
-
     </script>
+    <script src="./script.js"></script>
 </body>
 </html>

@@ -18,6 +18,28 @@ function checkAuthentication() {
     }
 }
 
+
+// Reset all accounts to default
+function resetAccounts() {
+    if (confirm('Bạn có chắc chắn muốn reset tất cả tài khoản về mặc định?')) {
+        localStorage.removeItem('userAccounts');
+        initializeAccounts();
+        alert('Đã reset tài khoản thành công! Bây giờ bạn có thể đăng nhập với:\n\nuser/123\nadmin/456\ngiamsat/789');
+    }
+}
+
+// Debug function to check accounts
+function debugAccounts() {
+    const accounts = localStorage.getItem('userAccounts');
+    if (accounts) {
+        const parsed = JSON.parse(accounts);
+        console.log('Current accounts:', parsed);
+        alert('Tài khoản hiện tại:\n' + JSON.stringify(parsed, null, 2));
+    } else {
+        alert('Không có tài khoản nào!');
+    }
+}
+
 function displayUserInfo() {
     const user = checkAuthentication();
     if (user) {
@@ -28,11 +50,19 @@ function displayUserInfo() {
         
         // Show/hide report button based on role
         const reportButton = document.querySelector('button[onclick="showDailyReport()"]');
+
         if (reportButton) {
+            const allowedRoles = ['admin', 'supervisor'];
+            reportButton.style.display = allowedRoles.includes(user.role) ? 'flex' : 'none';
+        }
+        
+        // Show/hide user management button based on role
+        const userManagementBtn = document.getElementById('userManagementBtn');
+        if (userManagementBtn) {
             if (user.role === 'admin') {
-                reportButton.style.display = 'flex';
+                userManagementBtn.classList.remove('hidden');
             } else {
-                reportButton.style.display = 'none';
+                userManagementBtn.classList.add('hidden');
             }
         }
         
@@ -394,6 +424,12 @@ document.addEventListener('DOMContentLoaded', function() {
     if (allTransactions.length > 0) {
         showNotification(`Đã tải ${allTransactions.length} dữ liệu thành công!`, 'success');
     }
+    
+    // Add event listener for user creation form
+    const createUserForm = document.getElementById('createUserForm');
+    if (createUserForm) {
+        createUserForm.addEventListener('submit', createUser);
+    }
 });
 
         
@@ -405,10 +441,11 @@ function showDailyReport() {
     }
     
     // Check if user is admin
-    if (user.role !== 'admin') {
-        showNotification('Chỉ admin mới có quyền truy cập báo cáo!', 'error');
-        return;
-    }
+        if (user.role !== 'admin' && user.role !== 'supervisor') {
+            showNotification('Chỉ admin mới có quyền truy cập báo cáo!', 'error');
+            return;
+        }
+
     
     // Hide other sections
     document.getElementById('receiptSection').classList.add('hidden');
@@ -811,3 +848,167 @@ const seconds = String(now.getSeconds()).padStart(2, '0');
 const formattedDateTime = `${day}/${month}/${year} ${hours}:${minutes}:${seconds}`;
 
 currentTimeElement.textContent = formattedDateTime;
+
+// User Management Functions
+function showUserManagement() {
+    const user = checkAuthentication();
+    if (!user) {
+        return;
+    }
+    
+    // Check if user is admin
+    if (user.role !== 'admin') {
+        showNotification('Chỉ admin mới có quyền quản lý tài khoản!', 'error');
+        return;
+    }
+    
+    // Hide other sections
+    document.getElementById('receiptSection').classList.add('hidden');
+    document.getElementById('dailyReportSection').classList.add('hidden');
+    document.querySelector('section.bg-white.rounded-xl.shadow-lg.p-6.mb-8').classList.add('hidden');
+    
+    // Show user management section
+    document.getElementById('userManagementSection').classList.remove('hidden');
+    
+    // Load user list
+    refreshUserList();
+}
+
+function hideUserManagement() {
+    // Hide user management section
+    document.getElementById('userManagementSection').classList.add('hidden');
+    
+    // Show summary section
+    document.querySelector('section.bg-white.rounded-xl.shadow-lg.p-6.mb-8').classList.remove('hidden');
+}
+
+function refreshUserList() {
+    const accounts = JSON.parse(localStorage.getItem('userAccounts') || '{}');
+    const userListBody = document.getElementById('userListBody');
+    userListBody.innerHTML = '';
+    
+    if (Object.keys(accounts).length === 0) {
+        userListBody.innerHTML = '<tr><td colspan="4" class="px-4 py-3 text-center text-gray-500">Không có tài khoản nào</td></tr>';
+        return;
+    }
+    
+    for (const [username, userData] of Object.entries(accounts)) {
+        // const roleText = userData.role === 'admin' ? 'Quản trị viên' : 'Người dùng';
+        // const roleColor = userData.role === 'admin' ? 'text-red-600' : 'text-blue-600';
+        // const roleColorSupervisor = userData.role === 'supervisor' ? 'text-green-600' : 'text-blue-600';
+        const roleMap = {
+            admin: {
+                text: 'Quản trị viên',
+                color: 'text-red-600'
+            },
+            supervisor: {
+                text: 'Giám sát',
+                color: 'text-green-600'
+            },
+            user: {
+                text: 'Người dùng',
+                color: 'text-blue-600'
+            }
+        };
+        
+        const roleInfo = roleMap[userData.role] || roleMap['user'];
+        const roleText = roleInfo.text;
+        const roleColor = roleInfo.color;
+        
+        
+        const row = document.createElement('tr');
+        row.className = 'border-b border-gray-200 hover:bg-gray-50';
+        row.innerHTML = `
+            <td class="px-4 py-3 text-gray-800 font-medium">${username}</td>
+            <td class="px-4 py-3 text-gray-700">${userData.name}</td>
+            <td class="px-4 py-3 text-center">
+                <span class="px-2 py-1 rounded-full text-xs font-medium ${roleColor} bg-gray-100">
+                    ${roleText}
+                </span>
+            </td>
+            <td class="px-4 py-3 text-center">
+                <button onclick="deleteUser('${username}')" 
+                    class="text-red-600 hover:text-red-800 font-medium text-sm">
+                    <i class="fas fa-trash mr-1"></i> Xóa
+                </button>
+            </td>
+        `;
+        userListBody.appendChild(row);
+    }
+}
+
+function createUser(event) {
+    event.preventDefault();
+    
+    const username = document.getElementById('newUsername').value.trim();
+    const password = document.getElementById('newPassword').value;
+    const name = document.getElementById('newName').value.trim();
+    const role = document.getElementById('newRole').value;
+    
+    // Validation
+    if (!username || !password || !name) {
+        showNotification('Vui lòng nhập đầy đủ thông tin!', 'error');
+        return;
+    }
+    
+    if (username.length < 3) {
+        showNotification('Tên đăng nhập phải có ít nhất 3 ký tự!', 'error');
+        return;
+    }
+    
+    if (password.length < 3) {
+        showNotification('Mật khẩu phải có ít nhất 3 ký tự!', 'error');
+        return;
+    }
+    
+    // Check if username already exists
+    const accounts = JSON.parse(localStorage.getItem('userAccounts') || '{}');
+    if (accounts[username]) {
+        showNotification('Tên đăng nhập đã tồn tại!', 'error');
+        return;
+    }
+    
+    // Create new user
+    const newUser = {
+        username: username,
+        password: password,
+        role: role,
+        name: name
+    };
+    
+    // Add to accounts
+    accounts[username] = newUser;
+    localStorage.setItem('userAccounts', JSON.stringify(accounts));
+    
+    // Reset form
+    document.getElementById('createUserForm').reset();
+    
+    // Refresh user list
+    refreshUserList();
+    
+    // Show success message
+    showNotification(`Đã tạo tài khoản ${username} thành công!`, 'success');
+}
+
+function deleteUser(username) {
+    const user = checkAuthentication();
+    if (!user || user.role !== 'admin') {
+        showNotification('Bạn không có quyền xóa tài khoản!', 'error');
+        return;
+    }
+    
+    // Prevent deleting own account
+    if (username === user.username) {
+        showNotification('Không thể xóa tài khoản của chính mình!', 'error');
+        return;
+    }
+    
+    if (confirm(`Bạn có chắc chắn muốn xóa tài khoản "${username}"?`)) {
+        const accounts = JSON.parse(localStorage.getItem('userAccounts') || '{}');
+        delete accounts[username];
+        localStorage.setItem('userAccounts', JSON.stringify(accounts));
+        
+        refreshUserList();
+        showNotification(`Đã xóa tài khoản ${username}!`, 'success');
+    }
+}
